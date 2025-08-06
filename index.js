@@ -2,20 +2,51 @@ import Groq from "groq-sdk";
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 async function ai() {
-    const completion = await groq.chat.completions
-    .create({
-      messages: [
-        {
-          role: "system",
-          content: "your name is Plain , a time management assistant for youser",
+  const completion = await groq.chat.completions.create({
+    messages: [
+      {
+        role: "user",
+        content: `hi
+        `,
+      },
+    ],
+    model: "llama-3.3-70b-versatile",
+    tools: [
+      {
+        type: "function",
+        function: {
+          name: "timeManagement",
+          description: "Manages tasks within time gaps",
+          parameters: {
+            type: "object",
+            properties: {
+              user: { type: "string" },
+              tasks: { type: "array", items: { type: "string" } },
+              time_gaps: { type: "array", items: { type: "string" } },
+            },
+            required: ["user", "tasks", "time_gaps"],
+          },
         },
-      ],
-      model: "llama-3.3-70b-versatile",
-    })
-    // .then((chatCompletion) => {
-    //   console.log(chatCompletion.choices[0]?.message?.content || "");
-    // });
-    console.log(JSON.stringify(completion.choices[0],null,2));
+      },
+    ],
+  });
+  // .then((chatCompletion) => {
+  //   console.log(chatCompletion.choices[0]?.message?.content || "");
+  // });
+  console.log(JSON.stringify(completion.choices[0], null, 2));
+ const toolCalls= completion.choices[0].message.tool_calls
+if (!toolCalls) {
+  console.log(`Assistant: ${completion.choices[0].message.content}`)
+  return
 }
 
-ai()
+}
+
+ai();
+
+function timeManagement(form, to) {
+  console.log("time is comming");
+  // return db here
+  return " 12 hours left";
+}
+// timeManagement();
