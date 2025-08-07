@@ -2,19 +2,22 @@ import Groq from "groq-sdk";
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 async function ai() {
-  // const question = await fetch()
-  const completion = await groq.chat.completions.create({
-    messages: [
-      {
+
+const messages =[
+{
         role: "system",
         content: `you are jarvis  a time manager ai which helps people with a lot of enthusiasum your task is to divide user's time for normal,importantand very important tasks and current date time is ${new Date().toUTCString()} `,
       },
-      {
+]
+
+messages.push( {
         role: "user",
-        content: ` who are you
-        `,
-      },
-    ],
+        content:  "who are you "   ,
+      },)
+
+  // const question = await fetch()
+  const completion = await groq.chat.completions.create({
+    messages: messages,
     model: "llama-3.3-70b-versatile",
     tools: [
       {
@@ -39,38 +42,25 @@ async function ai() {
   //   console.log(chatCompletion.choices[0]?.message?.content || "");
   // });
   console.log(JSON.stringify(completion.choices[0], null, 2));
-
+messages.push(completion.choices[0].message)
   const toolCalls = completion.choices[0].message.tool_calls;
   if (!toolCalls) {
     console.log(`Assistant: ${completion.choices[0].message.content}`);
     return;
   }
-
-  let result = "";
+let ids
+ let result = "";
   for (const tool of toolCalls) {
     const functionName = tool.function.name;
     const functionArguments = tool.function.arguments;
+    ids = tool.id
     if (functionName === "timeManagement") {
       result = timeManagement(JSON.parse(functionArguments));
     }
   }
-}
-const completion2 = await groq.chat.completions.create({
-  messages: [
-    {
-      role: "system",
-      content: `you are jarvis  a time manager ai which helps people with a lot of enthusiasum your task is to divide user's time for normal,importantand very important tasks and current date time is ${new Date().toUTCString()} `,
-    },
-    {
-      role: "user",
-      content: "who are you ",
-    },
-    {
-      role: "tool",
-      content: result,
-      tool_call_id: tool.id,
-    },
-  ],
+
+  const completion2 = await groq.chat.completions.create({
+  messages:messages,
   model: "llama-3.3-70b-versatile",
   tools: [
     {
@@ -92,11 +82,17 @@ const completion2 = await groq.chat.completions.create({
   ],
 });
 console.log(JSON.stringify(completion2.choices[0], null, 2));
-ai();
 
 function timeManagement(form, to) {
   console.log("time is comming");
   // return db here mogo ya vector0
   return " 12 hours left";
 }
-// timeManagement();
+// timeManagement();}
+
+console.log("-------------------------------");
+console.log("MESSAGES:",messages)
+
+}
+ai();
+
