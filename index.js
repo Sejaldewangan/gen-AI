@@ -2,12 +2,17 @@ import Groq from "groq-sdk";
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 async function ai() {
-  const question = await fetch()
+  // const question = await fetch()
   const completion = await groq.chat.completions.create({
     messages: [
       {
+        role: "system",
+        content: `you are jarvis  a time manager ai which helps people with a lot of enthusiasum your task is to divide user's time for normal,importantand very important tasks and current date time is ${new Date().toUTCString()} `,
+      },
+      {
         role: "user",
-        content: `${question}`,
+        content: ` who are you
+        `,
       },
     ],
     model: "llama-3.3-70b-versatile",
@@ -35,22 +40,58 @@ async function ai() {
   // });
   console.log(JSON.stringify(completion.choices[0], null, 2));
 
+  const toolCalls = completion.choices[0].message.tool_calls;
+  if (!toolCalls) {
+    console.log(`Assistant: ${completion.choices[0].message.content}`);
+    return;
+  }
 
- const toolCalls= completion.choices[0].message.tool_calls
-if (!toolCalls) {
-  console.log(`Assistant: ${completion.choices[0].message.content}`)
-  return
-}
-
-for( const tool of toolCalls){
-  const functionName =tool.function.name
-  const functionArguments =tool.function.arguments
-  if (functionName==='timeManagement') {
-    const result =timeManagement(functionArguments)
+  let result = "";
+  for (const tool of toolCalls) {
+    const functionName = tool.function.name;
+    const functionArguments = tool.function.arguments;
+    if (functionName === "timeManagement") {
+      result = timeManagement(JSON.parse(functionArguments));
+    }
   }
 }
-}
-
+const completion2 = await groq.chat.completions.create({
+  messages: [
+    {
+      role: "system",
+      content: `you are jarvis  a time manager ai which helps people with a lot of enthusiasum your task is to divide user's time for normal,importantand very important tasks and current date time is ${new Date().toUTCString()} `,
+    },
+    {
+      role: "user",
+      content: "who are you ",
+    },
+    {
+      role: "tool",
+      content: result,
+      tool_call_id: tool.id,
+    },
+  ],
+  model: "llama-3.3-70b-versatile",
+  tools: [
+    {
+      type: "function",
+      function: {
+        name: "timeManagement",
+        description: "Manages tasks within time gaps",
+        parameters: {
+          type: "object",
+          properties: {
+            user: { type: "string" },
+            tasks: { type: "array", items: { type: "string" } },
+            time_gaps: { type: "array", items: { type: "string" } },
+          },
+          required: ["user", "tasks", "time_gaps"],
+        },
+      },
+    },
+  ],
+});
+console.log(JSON.stringify(completion2.choices[0], null, 2));
 ai();
 
 function timeManagement(form, to) {
