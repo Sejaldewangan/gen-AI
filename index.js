@@ -1,23 +1,35 @@
 import Groq from "groq-sdk";
+import { close } from "node:fs";
+import readline from'node:readline/promises'
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 const normal_tasks =[
 
 ]
 async function ai() {
-
+const rL = readline.createInterface({input: process.stdin, output:process.stdout})
 const messages =[
 {
         role: "system",
-        content: `you are jarvis  a time manager ai which helps people with a lot of enthusiasum your task is to divide user's time for normal,importantand very important tasks and current date time is ${new Date().toUTCString()} `,
+        content: `you are jarvis  a time manager ai which helps people with a lot of enthusiasum your task is to divide user's time for normal,importantand very important tasks and
+        you have access to following tools :
+        1. timeManagement({from ,to})= string // Manages tasks within time gaps
+        2.normalTasks({task,timeTaken})= string //arrange normal tasks within perfect time gaps
+        current date time is ${new Date().toUTCString()} `,
       },
 ]
 
-messages.push( {
-        role: "user",
-        content:  "hey i just completed a task now 15 hours are left"   ,
-      },)
 
+  // ⬇⬇ user loop
 while (true) {
+  const prashna =await rL.question("USER : ")
+  if (prashna ==="bye")  {
+    break
+  }
+  messages.push( {
+        role: "user",
+        content:  prashna ,
+      },)
+  // ⬇⬇ agent loop
   while (true) {
   // const question = await fetch()
   const completion = await groq.chat.completions.create({
@@ -71,7 +83,7 @@ while (true) {
   // .then((chatCompletion) => {
   //   console.log(chatCompletion.choices[0]?.message?.content || "");
   // });
-  console.log(JSON.stringify(completion.choices[0], null, 2));
+  // console.log(JSON.stringify(completion.choices[0], null, 2));
 messages.push(completion.choices[0].message)
   const toolCalls = completion.choices[0].message.tool_calls;
   if (!toolCalls) {
@@ -124,30 +136,31 @@ let ids
 
 // timeManagement();}
 
-console.log("==============================================================================================================================================================================");
-console.log("MESSAGES:",messages)
+// console.log("==============================================================================================================================================================================");
+// console.log("MESSAGES:",messages)
+// console.log("==============================================================================================================================================================================");
+// console.log("tasksN:"+normal_tasks)
+
 }
 }
 
 
-console.log("==============================================================================================================================================================================");
-console.log("tasksN:"+normal_tasks)
 
 
 
-
+rL.close()
 }
 ai();
 
 
 function timeManagement(form, to) {
-  console.log("time is comming");
+  // console.log("time is comming");
   // return db here mogo ya vector0
   return " 12 hours left";
 }
 
 function normalTasks({task ,timeTaken}) {
-  console.log(`task is comming: ${task}, time for task :${timeTaken}`);
+  // console.log(`task is comming: ${task}, time for task :${timeTaken}`);
   
   normal_tasks.push({task:"",timeTaken:""})
   return "addad to database"
