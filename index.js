@@ -3,6 +3,7 @@ import { close } from "node:fs";
 import readline from "node:readline/promises";
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 const normal_tasks = [];
+const tasks = []
 async function ai() {
   const rL = readline.createInterface({
     input: process.stdin,
@@ -15,7 +16,6 @@ async function ai() {
         you have access to following tools :
         1. timeManagement({from ,to})= string // Manages tasks within time gaps
         2.normalTasks({task,timeTaken})= string //arrange normal tasks within perfect time gaps
-      
         current date time is ${new Date().toUTCString()} `,
     },
   ];
@@ -77,6 +77,26 @@ async function ai() {
               },
             },
           },
+          // {
+          //   type: "function",
+          //   function: {
+          //     name: "task",
+          //     description: "tell the task's name and its type",
+          //     parameters: {
+          //       type: "object",
+          //       properties: {
+          //         taskName: {
+          //           type: String,
+          //           description: "tells the task name",
+          //         },
+          //         taskType: {
+          //           type: String,
+          //           description: "tells the task type",
+          //         },
+          //       },
+          //     },
+          //   },
+          // },
         ],
       });
       // .then((chatCompletion) => {
@@ -157,5 +177,6 @@ function normalTasks({ task, timeTaken }) {
   return "added to database";
 }
 function task(taskName, taskType) {
-
+tasks.push({taskName:"",taskType:""})
+return "task added to data base"
 }
