@@ -1,157 +1,148 @@
 import Groq from "groq-sdk";
 import { close } from "node:fs";
-import readline from'node:readline/promises'
+import readline from "node:readline/promises";
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-const normal_tasks =[
-
-]
+const normal_tasks = [];
 async function ai() {
-const rL = readline.createInterface({input: process.stdin, output:process.stdout})
-const messages =[
-{
-        role: "system",
-        content: `you are jarvis  a time manager ai which helps people with a lot of enthusiasum your task is to divide user's time for normal,importantand very important tasks and
+  const rL = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+  const messages = [
+    {
+      role: "system",
+      content: `you are jarvis  a time manager ai which helps people with a lot of enthusiasum your task is to divide user's time for normal,importantand very important tasks and
         you have access to following tools :
         1. timeManagement({from ,to})= string // Manages tasks within time gaps
         2.normalTasks({task,timeTaken})= string //arrange normal tasks within perfect time gaps
+      
         current date time is ${new Date().toUTCString()} `,
-      },
-]
-
+    },
+  ];
 
   // ⬇⬇ user loop
-while (true) {
-  const prashna =await rL.question("USER : ")
-  if (prashna ==="bye")  {
-    break
-  }
-  messages.push( {
-        role: "user",
-        content:  prashna ,
-      },)
-  // ⬇⬇ agent loop
   while (true) {
-  // const question = await fetch()
-  const completion = await groq.chat.completions.create({
-    messages: messages,
-    model: "llama-3.3-70b-versatile",
-    tools: [
-      {
-        type: "function",
-        function: {
-          name: "timeManagement",
-          description: "Manages tasks within time gaps",
-          parameters: {
-            type: "object",
-            properties: {
-              form:{
-                type:String,
-                description:"get total time left"
-              },
-              to:{
-                type:String,
-                description:"get total time left"
-              }
-            },
-           
-          },
-        },
-      },
-       {
-        type: "function",
-        function: {
-          name: "normalTasks",
-          description: "arrange normal tasks within perfect time gaps",
-          parameters: {
-            type: "object",
-            properties: {
-              task:{
-                type:String,
-                description:"arrange tasks like normal in perfect time"
-              },
-              timeTaken:{
-                type:String,
-                description:"tell the time rmaining to complete tasks"
-              }
-            },
-           
-          },
-        },
-      },
-    ],
-  });
-  // .then((chatCompletion) => {
-  //   console.log(chatCompletion.choices[0]?.message?.content || "");
-  // });
-  // console.log(JSON.stringify(completion.choices[0], null, 2));
-messages.push(completion.choices[0].message)
-  const toolCalls = completion.choices[0].message.tool_calls;
-  if (!toolCalls) {
-    console.log(`Assistant: ${completion.choices[0].message.content}`);
-    break
-  }
-let ids
- let result = "";
-  for (const tool of toolCalls) {
-    const functionName = tool.function.name;
-    const functionArguments = tool.function.arguments;
-    ids = tool.id
-    if (functionName === "timeManagement") {
-      result = timeManagement(JSON.parse(functionArguments));
+    const prashna = await rL.question("USER : ");
+    if (prashna === "bye") {
+      break;
     }
-    else if (functionName==="normalTasks")     {
-      result = normalTasks(JSON.parse(functionArguments));
+    messages.push({
+      role: "user",
+      content: prashna,
+    });
+    // ⬇⬇ agent loop
+    while (true) {
+      // const question = await fetch()
+      const completion = await groq.chat.completions.create({
+        messages: messages,
+        model: "llama-3.3-70b-versatile",
+        tools: [
+          {
+            type: "function",
+            function: {
+              name: "timeManagement",
+              description: "Manages tasks within time gaps",
+              parameters: {
+                type: "object",
+                properties: {
+                  form: {
+                    type: String,
+                    description: "get total time left",
+                  },
+                  to: {
+                    type: String,
+                    description: "get total time left",
+                  },
+                },
+              },
+            },
+          },
+          {
+            type: "function",
+            function: {
+              name: "normalTasks",
+              description: "arrange normal tasks within perfect time gaps",
+              parameters: {
+                type: "object",
+                properties: {
+                  task: {
+                    type: String,
+                    description: "arrange tasks like normal in perfect time",
+                  },
+                  timeTaken: {
+                    type: String,
+                    description: "tell the time rmaining to complete tasks",
+                  },
+                },
+              },
+            },
+          },
+        ],
+      });
+      // .then((chatCompletion) => {
+      //   console.log(chatCompletion.choices[0]?.message?.content || "");
+      // });
+      // console.log(JSON.stringify(completion.choices[0], null, 2));
+      messages.push(completion.choices[0].message);
+      const toolCalls = completion.choices[0].message.tool_calls;
+      if (!toolCalls) {
+        console.log(`Assistant: ${completion.choices[0].message.content}`);
+        break;
+      }
+      let ids;
+      let result = "";
+      for (const tool of toolCalls) {
+        const functionName = tool.function.name;
+        const functionArguments = tool.function.arguments;
+        ids = tool.id;
+        if (functionName === "timeManagement") {
+          result = timeManagement(JSON.parse(functionArguments));
+        } else if (functionName === "normalTasks") {
+          result = normalTasks(JSON.parse(functionArguments));
+        }
+      }
+      messages.push({
+        role: "tool",
+        content: result,
+        tool_call_id: ids,
+      });
+
+      //   const completion2 = await groq.chat.completions.create({
+      //   messages:messages,
+      //   model: "llama-3.3-70b-versatile",
+      //   tools: [
+      //     {
+      //       type: "function",
+      //       function: {
+      //         name: "timeManagement",
+      //         description: "Manages tasks within time gaps",
+      //         parameters: {
+      //           type: "object",
+      //           properties: {
+      //             user: { type: "string" },
+      //             tasks: { type: "array", items: { type: "string" } },
+      //             time_gaps: { type: "array", items: { type: "string" } },
+      //           },
+      //           required: ["user", "tasks", "time_gaps"],
+      //         },
+      //       },
+      //     },
+      //   ],
+      // });
+      // console.log(JSON.stringify(completion2.choices[0], null, 2));
+
+      // timeManagement();}
+
+      // console.log("==============================================================================================================================================================================");
+      // console.log("MESSAGES:",messages)
+      // console.log("==============================================================================================================================================================================");
+      // console.log("tasksN:"+normal_tasks)
     }
-    
   }
-  messages.push({
-    role:"tool",
-    content:result,
-    tool_call_id:ids
-  })
 
-//   const completion2 = await groq.chat.completions.create({
-//   messages:messages,
-//   model: "llama-3.3-70b-versatile",
-//   tools: [
-//     {
-//       type: "function",
-//       function: {
-//         name: "timeManagement",
-//         description: "Manages tasks within time gaps",
-//         parameters: {
-//           type: "object",
-//           properties: {
-//             user: { type: "string" },
-//             tasks: { type: "array", items: { type: "string" } },
-//             time_gaps: { type: "array", items: { type: "string" } },
-//           },
-//           required: ["user", "tasks", "time_gaps"],
-//         },
-//       },
-//     },
-//   ],
-// });
-// console.log(JSON.stringify(completion2.choices[0], null, 2));
-
-// timeManagement();}
-
-// console.log("==============================================================================================================================================================================");
-// console.log("MESSAGES:",messages)
-// console.log("==============================================================================================================================================================================");
-// console.log("tasksN:"+normal_tasks)
-
-}
-}
-
-
-
-
-
-rL.close()
+  rL.close();
 }
 ai();
-
 
 function timeManagement(form, to) {
   // console.log("time is comming");
@@ -159,9 +150,12 @@ function timeManagement(form, to) {
   return " 12 hours left";
 }
 
-function normalTasks({task ,timeTaken}) {
+function normalTasks({ task, timeTaken }) {
   // console.log(`task is comming: ${task}, time for task :${timeTaken}`);
-  
-  normal_tasks.push({task:"",timeTaken:""})
-  return "addad to database"
+
+  normal_tasks.push({ task: "", timeTaken: "" });
+  return "added to database";
+}
+function task(taskName, taskType) {
+
 }
